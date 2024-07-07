@@ -7,7 +7,7 @@ metadata:
   labels:
       app.kubernetes.io/name: {{ .Values.appName }}
   annotations:
-    source_url: "git@github.com:krzysztofkarolak/inkyframe-images-php.git"
+    source_url: "git@github.com:krzysztofkarolak/image-fetcher-ha.git"
 spec:
   replicas: 1
   minReadySeconds: 10
@@ -24,7 +24,7 @@ spec:
       labels:
         app.kubernetes.io/name: {{ .Values.appName }}
       annotations:
-        source_url: "git@github.com:krzysztofkarolak/inkyframe-images-php.git"
+        source_url: "git@github.com:krzysztofkarolak/image-fetcher-ha.git"
     spec:
       nodeSelector:
         beta.kubernetes.io/arch: amd64
@@ -35,7 +35,7 @@ spec:
         - name: {{ .Values.registrySecretName }}
 
       containers:
-        - name: inkyframe-images-php
+        - name: image-fetcher
           image: {{ .Values.image }}
           imagePullPolicy: IfNotPresent
 
