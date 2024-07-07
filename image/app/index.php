@@ -120,7 +120,9 @@ function setData($dither) {
 }
 
 # Healthcheck
-if ($_GET['health'] == "true") {
+$health = $_GET['health'] ?? null;
+
+if ($health == "true") {
     $state = "SpacePicture";
 } else {
     $state = getHAState(getenv('HA_STATE_ENTITY_ID'));
