@@ -132,7 +132,7 @@ if ($health == "true") {
 switch($state) {
     case "SmartHome Dashboard":
     	setData("0");
-    	getRemoteImage(trim(preg_replace('/\s+/', ' ', )));
+    	getRemoteImage(trim(preg_replace('/\s+/', ' ', getenv('HA_IMAGE_URL'))));
     	break;
     case "SpacePicture":
     	setData("1");
