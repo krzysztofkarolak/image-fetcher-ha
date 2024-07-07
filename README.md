@@ -40,11 +40,11 @@ Image Fetcher is a PHP script designed to fetch images from various sources such
 3. **Run the application:**
    - **Locally:**
      ```sh
-     php image/app/fetch_images.php
+     php image/app/index.php
      ```
    - **Using Docker:**
      ```sh
-     docker build -t image-fetcher-ha .
+     docker build -t image-fetcher-ha image
      docker run --env-file .env image-fetcher-ha
      ```
 
