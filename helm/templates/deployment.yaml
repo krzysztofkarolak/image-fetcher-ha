@@ -1,0 +1,87 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.appName }}
+  namespace: {{ .Values.namespace }}
+  labels:
+      app.kubernetes.io/name: {{ .Values.appName }}
+  annotations:
+    source_url: "git@github.com:krzysztofkarolak/inkyframe-images-php.git"
+spec:
+  replicas: 1
+  minReadySeconds: 10
+  progressDeadlineSeconds: 60
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.appName }}
+
+  template:
+    metadata:
+      name: {{ .Values.appName }}
+      namespace: {{ .Values.namespace }}
+      labels:
+        app.kubernetes.io/name: {{ .Values.appName }}
+      annotations:
+        source_url: "git@github.com:krzysztofkarolak/inkyframe-images-php.git"
+    spec:
+      nodeSelector:
+        beta.kubernetes.io/arch: amd64
+
+      restartPolicy: Always
+
+      imagePullSecrets:
+        - name: {{ .Values.registrySecretName }}
+
+      containers:
+        - name: inkyframe-images-php
+          image: {{ .Values.image }}
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8080
+
+          env:
+            - name: GOOGLE_APP_CREDENTIALS
+              valueFrom:
+                secretKeyRef:
+                  key: GOOGLE_APP_CREDENTIALS
+                  name: {{ .Values.secretName }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: {{ .Values.gcsSecretFileLocation }}
+            - name: HA_IMAGE_URL
+              valueFrom:
+                secretKeyRef:
+                  key: HA_IMAGE_URL
+                  name: {{ .Values.secretName }}
+            - name: HA_URL
+              valueFrom:
+                secretKeyRef:
+                  key: HA_URL
+                  name: {{ .Values.secretName }}
+            - name: HA_BEARER
+              valueFrom:
+                secretKeyRef:
+                  key: HA_BEARER
+                  name: {{ .Values.secretName }}
+            - name: HA_STATE_ENTITY_ID
+              value: {{ .Values.haStateEntityId }}
+            - name: GCS_BUCKET_NAME
+              value: {{ .Values.cloudStorageBucketName }}
+
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "20m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          livenessProbe:
+            httpGet:
+              path: /index.php?health=true
+              port: 8080
+            initialDelaySeconds: 25
+            periodSeconds: 60
+            timeoutSeconds: 25
