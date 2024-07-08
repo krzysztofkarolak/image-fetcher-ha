@@ -152,12 +152,8 @@ switch($state) {
         $object = getRandomCloudStorageImageName($bucket);
         downloadAndCropCloudStorageImage($object, true);
         break;
-    case "Healthcheck":
-        getRemoteImage('image.jpg');
-        break;
     default:
-    	setData("1");
-    	getRemoteImage($APOD_URL);
+        getRemoteImage('image.jpg');
         break;
 }
 
