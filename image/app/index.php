@@ -123,7 +123,7 @@ function setData($dither) {
 $health = $_GET['health'] ?? null;
 
 if ($health == "true") {
-    $state = "SpacePicture";
+    $state = "Healthcheck";
 } else {
     $state = getHAState(getenv('HA_STATE_ENTITY_ID'));
 }
@@ -151,6 +151,9 @@ switch($state) {
         $bucket = $storage->bucket(getenv('GCS_BUCKET_NAME'));
         $object = getRandomCloudStorageImageName($bucket);
         downloadAndCropCloudStorageImage($object, true);
+        break;
+    case "Healthcheck":
+        getRemoteImage('image.jpg');
         break;
     default:
     	setData("1");
