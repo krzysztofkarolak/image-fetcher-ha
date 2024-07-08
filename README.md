@@ -1,6 +1,6 @@
 # Image Fetcher
 
-Image Fetcher is a PHP script designed to fetch images from various sources such as NASA APOD, Google Cloud Storage, and Home Assistant Dashboard, making it ideal for use with smart frames like Inky Frame (e-ink or digital screens). This repository includes all necessary components to deploy and run the app, integrated with Home Assistant.
+Image Fetcher is a PHP script designed to fetch images from various sources such as NASA APOD, Google Cloud Storage, and Home Assistant Dashboard, making it ideal for use with smart frames like Inky Frame (e-ink or digital screens). This repository includes all necessary components to deploy and run the app.
 
 ## Features
 
