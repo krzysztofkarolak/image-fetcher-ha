@@ -116,7 +116,14 @@ function getRemoteImage($imageUrl) {
 
 function setData($dither) {
 	$json = "{\"dither\":\"" . $dither . "\"}";
-	file_put_contents("data.json", $json);
+	return $json;
+}
+
+function configOutput($dither) {
+    if ($_GET['config'] == "1") {
+        echo setData($dither);
+        exit(0);
+    }
 }
 
 # Healthcheck
@@ -131,28 +138,29 @@ if ($health == "true") {
 
 switch($state) {
     case "SmartHome Dashboard":
-    	setData("0");
+    	configOutput("0");
     	getRemoteImage(trim(preg_replace('/\s+/', ' ', getenv('HA_IMAGE_URL'))));
     	break;
     case "SpacePicture":
-    	setData("1");
+    	configOutput("1");
     	getRemoteImage($APOD_URL);
     	break;
     case "CloudStorage Random":
-    	setData("1");
+    	configOutput("1");
         $storage = new StorageClient();
         $bucket = $storage->bucket(getenv('GCS_BUCKET_NAME'));
         $object = getRandomCloudStorageImageName($bucket);
         downloadAndCropCloudStorageImage($object);
     	break;
     case "CloudStorage Random Weather":
-        setData("1");
+        configOutput("1");
         $storage = new StorageClient();
         $bucket = $storage->bucket(getenv('GCS_BUCKET_NAME'));
         $object = getRandomCloudStorageImageName($bucket);
         downloadAndCropCloudStorageImage($object, true);
         break;
     default:
+        configOutput("1");
         getRemoteImage('image.jpg');
         break;
 }
