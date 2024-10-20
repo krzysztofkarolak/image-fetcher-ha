@@ -51,10 +51,7 @@ spec:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: {{ .Values.gcsSecretFileLocation }}
             - name: HA_IMAGE_URL
-              valueFrom:
-                secretKeyRef:
-                  key: HA_IMAGE_URL
-                  name: {{ .Values.secretName }}
+              value: {{ .Values.haImageUrl }}
             - name: HA_URL
               valueFrom:
                 secretKeyRef:
