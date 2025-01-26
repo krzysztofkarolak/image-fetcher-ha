@@ -23,5 +23,4 @@ spec:
     ports:
       {{ .Values.ingressEntryPointName }}:
         port: {{ .Values.ingressEntryPointPort }}
-        expose: true
         exposedPort: {{ .Values.ingressEntryPointPort }}
