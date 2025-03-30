@@ -65,6 +65,7 @@ function downloadAndCropCloudStorageImage($randomObject, $weather = false) {
         $image = imagecreatefromjpeg($tempFileName);
     } catch (Exception $e) {
         logErrorMessage("Error occured while creating jpeg from object " . $randomObject->name() . ". " . $e->getMessage() . "\nTrace: " . $e->getTraceAsString());
+        unlink($tempFileName);
         downloadAndCropCloudStorageImage(getRandomCloudStorageImageName($bucket), true);
     }
 
