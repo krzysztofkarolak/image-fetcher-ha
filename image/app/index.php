@@ -9,6 +9,14 @@ $APOD_URL = "https://pimoroni.github.io/feed2image/nasa-apod-800x480-daily.jpg";
 
 file_put_contents(getenv('GOOGLE_APPLICATION_CREDENTIALS'), getenv('GOOGLE_APP_CREDENTIALS'));
 
+function logErrorMessage($message) {
+    $datetime = new DateTime();
+    $datetime->setTimezone(new DateTimeZone('UTC'));
+    $logEntry = $datetime->format('Y/m/d H:i:s') . ' ' . $message;
+
+    return $logEntry;
+}
+
 function getHAState($entity) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_VERBOSE, true);
@@ -17,7 +25,7 @@ function getHAState($entity) {
         'Authorization: Bearer ' . trim(preg_replace('/\s+/', ' ', getenv('HA_BEARER')))
     ));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10); //timeout in seconds
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
     $result = curl_exec($ch);
     curl_close($ch);
 
@@ -45,7 +53,6 @@ function getRandomCloudStorageImageName($bucket) {
 function downloadAndCropCloudStorageImage($randomObject, $weather = false) {
     $objectData = $randomObject->downloadAsStream();
 
-    // Create a temporary file to store the downloaded image
     $tempFileName = tempnam(sys_get_temp_dir(), 'random_image');
     $tempFile = fopen($tempFileName, 'w');
 
@@ -54,22 +61,21 @@ function downloadAndCropCloudStorageImage($randomObject, $weather = false) {
     }
     fclose($tempFile);
     
-    $image = imagecreatefromjpeg($tempFileName);
+    try {
+        $image = imagecreatefromjpeg($tempFileName);
+    } catch (Exception $e) {
+        logErrorMessage("Error occured while creating jpeg from object " . $randomObject->name() . ". " . $e->getMessage() . "\nTrace: " . $e->getTraceAsString());
+        downloadAndCropCloudStorageImage(getRandomCloudStorageImageName($bucket), true);
+    }
 
-    // Get the original image dimensions
     $originalWidth = imagesx($image);
     $originalHeight = imagesy($image);
-
-    // Calculate the coordinates and dimensions for cropping to fit 800x480px
     $cropWidth = min($originalWidth, $originalHeight * 800 / 480);
     $cropHeight = min($originalHeight, $originalWidth * 480 / 800);
     $cropX = ($originalWidth - $cropWidth) / 2;
     $cropY = ($originalHeight - $cropHeight) / 2;
-
-    // Create a new image with the desired dimensions
     $resizedImage = imagecreatetruecolor(800, 480);
 
-    // Crop and resize the image
     imagecopyresampled($resizedImage, $image, 0, 0, $cropX, $cropY, 800, 480, $cropWidth, $cropHeight);
 
     if($weather) {
@@ -91,10 +97,9 @@ function downloadAndCropCloudStorageImage($randomObject, $weather = false) {
     header('Content-Type: image/jpeg');
     imagejpeg($resizedImage);
 
-    // Clean up
     imagedestroy($image);
     imagedestroy($resizedImage);
-    unlink($tempFileName); // Delete the temporary file
+    unlink($tempFileName);
 }
 
 function getRemoteImage($imageUrl) {
