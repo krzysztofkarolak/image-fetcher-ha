@@ -9,20 +9,6 @@ spec:
     app.kubernetes.io/name: {{ .Values.appName }}
   ports:
     - protocol: TCP
-      port: {{ .Values.ingressEntryPointPort }}
+      port: {{ .Values.servicePort }}
       targetPort: 8080
 
----
-apiVersion: helm.cattle.io/v1
-kind: HelmChartConfig
-metadata:
-  name: traefik
-  namespace: kube-system
-spec:
-  valuesContent: |-
-    ports:
-      {{ .Values.ingressEntryPointName }}:
-        port: {{ .Values.ingressEntryPointPort }}
-        expose:
-          default: true
-        exposedPort: {{ .Values.ingressEntryPointPort }}
