@@ -26,9 +26,6 @@ spec:
       annotations:
         source_url: "git@github.com:krzysztofkarolak/image-fetcher-ha.git"
     spec:
-      nodeSelector:
-        beta.kubernetes.io/arch: amd64
-
       restartPolicy: Always
 
       imagePullSecrets:
@@ -66,6 +63,25 @@ spec:
               value: {{ .Values.haStateEntityId }}
             - name: GCS_BUCKET_NAME
               value: {{ .Values.cloudStorageBucketName }}
+            {{- if .Values.dashboards.url }}
+            - name: DASHBOARDS_URL
+              value: {{ .Values.dashboards.url | quote }}
+            - name: DASHBOARDS_TTL
+              value: {{ .Values.dashboards.ttlSeconds | default 60 | quote }}
+            {{- end }}
+            {{- if .Values.dashboards.fromConfigMap }}
+            - name: DASHBOARDS_DIR
+              value: /srv/dashboards
+            {{- end }}
+
+          {{- if .Values.dashboards.fromConfigMap }}
+          volumeMounts:
+            {{- range $name, $_ := (include "image-fetcher.dashboardDirs" . | fromYaml) }}
+            - name: dash-{{ $name }}
+              mountPath: /srv/dashboards/{{ $name }}
+              readOnly: true
+            {{- end }}
+          {{- end }}
 
           resources:
             requests:
@@ -82,3 +98,12 @@ spec:
             initialDelaySeconds: 25
             periodSeconds: 60
             timeoutSeconds: 25
+
+      {{- if .Values.dashboards.fromConfigMap }}
+      volumes:
+        {{- range $name, $_ := (include "image-fetcher.dashboardDirs" . | fromYaml) }}
+        - name: dash-{{ $name }}
+          configMap:
+            name: {{ $.Values.appName }}-dash-{{ $name }}
+        {{- end }}
+      {{- end }}

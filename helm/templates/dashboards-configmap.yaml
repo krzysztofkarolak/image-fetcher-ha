@@ -1,0 +1,23 @@
+{{- /*
+  Każdy katalog helm/files/dashboards/<nazwa>/ staje się ConfigMapą montowaną w /srv/dashboards/<nazwa>.
+  Edycja szablonu = `helm upgrade` -> kubelet podmienia pliki w działającym podzie (do ~1 min),
+  bez przebudowy obrazu i bez restartu. Nazwy katalogów: małe litery, cyfry, myślniki.
+*/ -}}
+{{- if .Values.dashboards.fromConfigMap }}
+{{- $dirs := dict }}
+{{- range $path, $_ := .Files.Glob "files/dashboards/*/*" }}
+{{- $_ := set $dirs (base (dir $path)) true }}
+{{- end }}
+{{- range $name, $_ := $dirs }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Values.appName }}-dash-{{ $name }}
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $.Values.appName }}
+data:
+{{ ($.Files.Glob (printf "files/dashboards/%s/*" $name)).AsConfig | indent 2 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,83 @@
+{#
+  Wspólne komponenty dla wszystkich dashboardów.
+  Użycie w szablonie:  {% import '_macros.svg.twig' as ui %}
+                       {{ ui.tile(c, {x: 20, y: 90, w: 240, h: 150, label: 'Salon', value: d.temp_in|num(1), unit: '°C', icon: 'sofa'}) }}
+
+  Zasady pod e-ink: płaskie kolory tylko z palety `c`, ramki ≥ 2 px, tekst ≥ 18 px,
+  żółty wyłącznie jako tło pod czarnym tekstem (żółty tekst na białym jest nieczytelny).
+#}
+
+{# Pasek nagłówka #}
+{% macro header(c, o) %}
+  {% set o = {x: 0, y: 0, w: 800, h: 64, bg: c.black, fg: c.white, size: 30, right: ''}|merge(o) %}
+  <rect x="{{ o.x }}" y="{{ o.y }}" width="{{ o.w }}" height="{{ o.h }}" fill="{{ o.bg }}"/>
+  <text x="{{ o.x + 20 }}" y="{{ o.y + o.h / 2 + o.size * 0.36 }}"
+        font-family="Inter, 'DejaVu Sans', sans-serif" font-weight="700" font-size="{{ o.size }}" fill="{{ o.fg }}">{{ o.title }}</text>
+  {% if o.right %}
+  <text x="{{ o.x + o.w - 20 }}" y="{{ o.y + o.h / 2 + o.size * 0.27 }}" text-anchor="end"
+        font-family="Inter, 'DejaVu Sans', sans-serif" font-weight="600" font-size="{{ o.size * 0.75 }}" fill="{{ o.fg }}">{{ o.right }}</text>
+  {% endif %}
+{% endmacro %}
+
+{# Kafelek z dużą wartością. accent = kolor wartości/ikony; alert = true odwraca kafelek (tło accent) #}
+{% macro tile(c, o) %}
+  {% set o = {label: '', value: '—', unit: '', icon: null, accent: c.black, alert: false, sub: '', border: 3, vsize: 64}|merge(o) %}
+  {% set bg = o.alert ? o.accent : c.white %}
+  {% set fg = o.alert ? (o.accent == c.yellow ? c.black : c.white) : c.black %}
+  {% set vc = o.alert ? fg : o.accent %}
+  <rect x="{{ o.x + o.border / 2 }}" y="{{ o.y + o.border / 2 }}" width="{{ o.w - o.border }}" height="{{ o.h - o.border }}"
+        fill="{{ bg }}" stroke="{{ c.black }}" stroke-width="{{ o.border }}"/>
+  {% if o.icon %}{{ icon(o.icon, o.x + 14, o.y + 12, 36, vc) }}{% endif %}
+  <text x="{{ o.x + (o.icon ? 58 : 16) }}" y="{{ o.y + 39 }}"
+        font-family="Inter, 'DejaVu Sans', sans-serif" font-weight="600" font-size="22" fill="{{ fg }}">{{ o.label }}</text>
+  <text x="{{ o.x + 16 }}" y="{{ o.y + o.h - (o.sub ? 44 : 22) }}"
+        font-family="Inter, 'DejaVu Sans', sans-serif" font-weight="800" font-size="{{ o.vsize }}" fill="{{ vc }}">{{ o.value }}<tspan
+        font-size="{{ o.vsize * 0.45 }}" font-weight="600" dx="4">{{ o.unit }}</tspan></text>
+  {% if o.sub %}
+  <text x="{{ o.x + 16 }}" y="{{ o.y + o.h - 16 }}"
+        font-family="Inter, 'DejaVu Sans', sans-serif" font-weight="500" font-size="20" fill="{{ fg }}">{{ o.sub }}</text>
+  {% endif %}
+{% endmacro %}
+
+{# Wiersz statusu: ikona + tekst, kolor zależny od stanu #}
+{% macro status(c, o) %}
+  {% set o = {icon: null, color: c.black, size: 24}|merge(o) %}
+  {% if o.icon %}{{ icon(o.icon, o.x, o.y - o.size * 0.85, o.size * 1.2, o.color) }}{% endif %}
+  <text x="{{ o.x + (o.icon ? o.size * 1.5 : 0) }}" y="{{ o.y }}"
+        font-family="Inter, 'DejaVu Sans', sans-serif" font-weight="600" font-size="{{ o.size }}" fill="{{ o.color }}">{{ o.text }}</text>
+{% endmacro %}
+
+{# "Pigułka" – np. alert. Tło w kolorze, tekst biały (czarny na żółtym) #}
+{% macro badge(c, o) %}
+  {% set o = {bg: c.red, size: 22, pad: 12}|merge(o) %}
+  {% set wdt = o.w ?? (o.text|length * o.size * 0.62 + o.pad * 2) %}
+  <rect x="{{ o.x }}" y="{{ o.y }}" width="{{ wdt }}" height="{{ o.size + o.pad }}" rx="{{ (o.size + o.pad) / 2 }}" fill="{{ o.bg }}"/>
+  <text x="{{ o.x + wdt / 2 }}" y="{{ o.y + (o.size + o.pad) / 2 + o.size * 0.36 }}" text-anchor="middle"
+        font-family="Inter, 'DejaVu Sans', sans-serif" font-weight="700" font-size="{{ o.size }}"
+        fill="{{ o.bg == c.yellow or o.bg == c.white ? c.black : c.white }}">{{ o.text }}</text>
+{% endmacro %}
+
+{# Lista (np. wydarzenia z kalendarza). items = [{time: '10:00', text: '...'}, ...] #}
+{% macro list(c, o) %}
+  {% set o = {size: 22, gap: 34, max: 5, chars: 34, title: null}|merge(o) %}
+  {% set y0 = o.y %}
+  {% if o.title %}
+  <text x="{{ o.x }}" y="{{ y0 }}" font-family="Inter, 'DejaVu Sans', sans-serif" font-weight="700" font-size="{{ o.size }}" fill="{{ c.black }}">{{ o.title }}</text>
+  <rect x="{{ o.x }}" y="{{ y0 + 8 }}" width="{{ o.w }}" height="2" fill="{{ c.black }}"/>
+  {% set y0 = y0 + o.gap + 6 %}
+  {% endif %}
+  {% for it in (o.items ?? [])|slice(0, o.max) %}
+    <text x="{{ o.x }}" y="{{ y0 + loop.index0 * o.gap }}" font-family="Inter, 'DejaVu Sans', sans-serif" font-size="{{ o.size }}" fill="{{ c.black }}"><tspan
+      font-weight="700" fill="{{ it.color ?? c.blue }}">{{ it.time ?? '' }}</tspan><tspan dx="10">{{ (it.text ?? '')|trunc(o.chars) }}</tspan></text>
+  {% else %}
+    <text x="{{ o.x }}" y="{{ y0 }}" font-family="Inter, 'DejaVu Sans', sans-serif" font-size="{{ o.size }}" fill="{{ c.black }}">{{ o.empty ?? 'Brak' }}</text>
+  {% endfor %}
+{% endmacro %}
+
+{# Prosty pasek postępu / poziomu (0–100) #}
+{% macro bar(c, o) %}
+  {% set o = {h: 18, color: c.green, border: 2}|merge(o) %}
+  {% set p = max(0, min(100, o.value|default(0) + 0)) %}
+  <rect x="{{ o.x }}" y="{{ o.y }}" width="{{ o.w }}" height="{{ o.h }}" fill="{{ c.white }}" stroke="{{ c.black }}" stroke-width="{{ o.border }}"/>
+  <rect x="{{ o.x + o.border }}" y="{{ o.y + o.border }}" width="{{ (o.w - 2 * o.border) * p / 100 }}" height="{{ o.h - 2 * o.border }}" fill="{{ o.color }}"/>
+{% endmacro %}

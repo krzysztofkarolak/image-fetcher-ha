@@ -8,3 +8,8 @@ namespace: "microservices"
 servicePort: "8081"
 cloudStorageBucketName: "example-bucket"
 haImageUrl: "example.prod.svc.cluster.local"
+
+dashboards:
+  fromConfigMap: false
+  url: "http://homeassistant.local:8123/local/inky"
+  ttlSeconds: 60
