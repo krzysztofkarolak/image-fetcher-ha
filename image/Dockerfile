@@ -48,9 +48,11 @@ RUN \
         && composer update --no-dev --optimize-autoloader ;\
     fi \
     && mkdir -p /srv/data \
-    && mkdir -p /usr/share/mdi \
-    && wget -qO- https://registry.npmjs.org/@mdi/svg/-/svg-${MDI_VERSION}.tgz \
-        | tar xz -C /usr/share/mdi --strip-components=1 package/svg \
+    && mkdir -p /tmp/mdi /usr/share/mdi \
+    && wget -qO- https://registry.npmjs.org/@mdi/svg/-/svg-${MDI_VERSION}.tgz | tar xz -C /tmp/mdi \
+    && mv /tmp/mdi/package/svg /usr/share/mdi/svg \
+    && rm -rf /tmp/mdi \
+    && test -f /usr/share/mdi/svg/sofa.svg \
     && if [ -d /var/www/dashboards/fonts ] ; then \
         mkdir -p /usr/share/fonts/custom && cp /var/www/dashboards/fonts/* /usr/share/fonts/custom/ ;\
     fi \
