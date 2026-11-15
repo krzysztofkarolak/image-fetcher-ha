@@ -1,11 +1,3 @@
-{#
-  Wygląd dashboardu. Dostępne zmienne:
-    d.*     – dane z sekcji `data:` w dashboard.yaml
-    c.*     – kolory palety urządzenia (c.black, c.white, c.red, c.yellow, c.blue, c.green [, c.orange])
-    w, h    – rozdzielczość;  vars.* – stałe z YAML
-  Helpery: icon(nazwa_mdi, x, y, rozmiar, kolor), |num(miejsca), |trunc(n), |lines(znaki, max), |pl_date
-  Podgląd na żywo: http://<serwis>/?preview=1&dashboard=main
-#}
 {% import '_macros.svg.twig' as ui %}
 
 {% set weather_icons = {
@@ -22,48 +14,47 @@
      shape-rendering="crispEdges" text-rendering="geometricPrecision">
   <rect width="{{ w }}" height="{{ h }}" fill="{{ c.white }}"/>
 
-  {{ ui.header(c, {w: w, title: vars.title, right: d.date ? d.date|pl_date : ''}) }}
+  {{ ui.header(c, {w: w, title: vars.title, right: d.date ? d.date|date('l, F j') : ''}) }}
 
-  {# --- Pogoda: duża temperatura, kolor zależny od wartości --- #}
+  {# Weather #}
   {% set t_color = t_out <= 0 ? c.blue : (t_out >= 28 ? c.red : c.black) %}
   {{ icon(weather_icons[d.weather] ?? 'weather-cloudy', 24, 84, 110, t_out >= 28 ? c.red : c.black) }}
   <text x="150" y="180" font-family="Inter, 'DejaVu Sans', sans-serif" font-weight="800" font-size="96" fill="{{ t_color }}">{{ d.temp_out|num }}°</text>
-  <text x="152" y="214" font-family="Inter, 'DejaVu Sans', sans-serif" font-weight="500" font-size="22" fill="{{ c.black }}">na zewnątrz · max {{ d.temp_max|num }}°</text>
+  <text x="152" y="214" font-family="Inter, 'DejaVu Sans', sans-serif" font-weight="500" font-size="22" fill="{{ c.black }}">outside · high {{ d.temp_max|num }}°</text>
 
-  {# --- Kafelki z temperaturami w domu --- #}
-  {{ ui.tile(c, {x: 400, y: 80, w: 190, h: 150, label: 'Salon', icon: 'sofa',
-                 value: d.temp_in|num(1), unit: '°', sub: d.hum_in|num ~ '% wilg.'}) }}
-  {{ ui.tile(c, {x: 594, y: 80, w: 190, h: 150, label: 'Sypialnia', icon: 'bed',
+  {# Indoor #}
+  {{ ui.tile(c, {x: 400, y: 80, w: 190, h: 150, label: 'Living room', lsize: 20, icon: 'sofa',
+                 value: d.temp_in|num(1), unit: '°', sub: d.hum_in|num ~ '% humidity'}) }}
+  {{ ui.tile(c, {x: 594, y: 80, w: 190, h: 150, label: 'Bedroom', icon: 'bed',
                  value: d.temp_bed|num(1), unit: '°',
                  accent: (d.temp_bed + 0) > 22 ? c.red : c.black}) }}
 
-  {# --- Energia --- #}
-  {{ ui.tile(c, {x: 16, y: 246, w: 250, h: 120, label: 'Pobór', icon: 'flash', vsize: 52,
+  {# Energy #}
+  {{ ui.tile(c, {x: 16, y: 246, w: 250, h: 120, label: 'Power', icon: 'flash', vsize: 52,
                  value: d.power_kw|num(1), unit: 'kW', accent: (d.power_kw + 0) >= 5 ? c.red : c.black,
                  alert: (d.power_kw + 0) >= 8}) }}
-  {{ ui.tile(c, {x: 16, y: 370, w: 250, h: 96, label: 'Dziś', icon: 'chart-bar', vsize: 34,
+  {{ ui.tile(c, {x: 16, y: 370, w: 250, h: 96, label: 'Today', icon: 'chart-bar', vsize: 34,
                  value: d.energy_today|num, unit: 'kWh'}) }}
 
-  {# --- Statusy: kolor tylko gdy trzeba zwrócić uwagę --- #}
+  {# Status #}
   {% if windows|length > 0 %}
     {{ ui.status(c, {x: 290, y: 278, icon: 'window-open-variant', color: c.red,
-                     text: 'Otwarte: ' ~ windows|join(', ')|trunc(30)}) }}
+                     text: 'Open: ' ~ windows|join(', ')|trunc(32)}) }}
   {% else %}
-    {{ ui.status(c, {x: 290, y: 278, icon: 'window-closed-variant', color: c.green, text: 'Okna zamknięte'}) }}
+    {{ ui.status(c, {x: 290, y: 278, icon: 'window-closed-variant', color: c.green, text: 'Windows closed'}) }}
   {% endif %}
 
   {% if d.door_locked == 'True' %}
-    {{ ui.status(c, {x: 290, y: 318, icon: 'lock', color: c.black, text: 'Drzwi zamknięte na klucz'}) }}
+    {{ ui.status(c, {x: 290, y: 318, icon: 'lock', color: c.black, text: 'Front door locked'}) }}
   {% else %}
-    {{ ui.status(c, {x: 290, y: 318, icon: 'lock-open-variant', color: c.red, text: 'Drzwi NIE zamknięte!'}) }}
+    {{ ui.status(c, {x: 290, y: 318, icon: 'lock-open-variant', color: c.red, text: 'Front door UNLOCKED!'}) }}
   {% endif %}
 
-  {# --- Kalendarz --- #}
-  {{ ui.list(c, {x: 290, y: 372, w: 494, title: 'Najbliższe', items: d.events is iterable ? d.events : [],
-                 max: 2, chars: 30, empty: 'Brak wydarzeń'}) }}
+  {# Calendar #}
+  {{ ui.list(c, {x: 290, y: 372, w: 494, title: 'Up next', items: d.events is iterable ? d.events : [],
+                 max: 2, chars: 30, empty: 'No events'}) }}
 
-  {# --- Alert na żółtym tle (czarny tekst) --- #}
   {% if d.bins and d.bins != 'unknown' %}
-    {{ ui.badge(c, {x: 544, y: 244, w: 240, bg: c.yellow, text: 'Śmieci: ' ~ d.bins|trunc(14), size: 18}) }}
+    {{ ui.badge(c, {x: 544, y: 244, w: 240, bg: c.yellow, text: 'Bins: ' ~ d.bins|trunc(16), size: 18}) }}
   {% endif %}
 </svg>

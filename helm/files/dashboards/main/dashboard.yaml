@@ -1,24 +1,16 @@
-# Dashboard "main" – wybierany w input_select opcją "Dashboard: main"
-# Zmiany w tym pliku i w dashboard.svg.twig działają od razu (bez restartu):
-# zmienia się hash, Inky przy następnym wybudzeniu pobierze nowy obraz.
-
 device:
   width: 800          # 7.3" = 800x480, 5.7" = 600x448, 4" = 640x400
   height: 480
-  palette: spectra6   # spectra6 (Inky Frame 7.3" Spectra) | acep7 (starsze 4"/5.7"/7.3")
-  dither: false       # płaskie UI -> bez ditheringu (true tylko jeśli wstawiasz zdjęcia)
+  palette: spectra6   # spectra6 | acep7
+  dither: false
 
 template: dashboard.svg.twig
 
-# Dowolne stałe dostępne w szablonie jako vars.*
 vars:
-  title: Dom
+  title: Home
 
-# Dane z Home Assistant – każdy wpis to szablon Jinja (jak w Narzędzia deweloperskie -> Szablon).
-# Wszystko pobierane JEDNYM zapytaniem POST /api/template.
-#
-# WAŻNE dla hasha: zaokrąglaj wartości i nie dawaj minut/sekund – każda zmiana wyniku
-# to nowy render i odświeżenie e-inka. Wynik zaczynający się od [ lub { jest dekodowany jako JSON.
+# Jinja templates rendered by Home Assistant in a single /api/template call.
+# Round values and avoid minutes/seconds: every change triggers a redraw.
 data:
   date: "{{ now().date().isoformat() }}"
 
@@ -26,11 +18,10 @@ data:
   weather:  "{{ states('weather.forecast_home') }}"
   temp_max: "{{ state_attr('weather.forecast_home', 'temperature') | float(0) | round(0) | int }}"
 
-  temp_in:  "{{ states('sensor.salon_temperatura') | float(0) | round(1) }}"
-  hum_in:   "{{ (states('sensor.salon_wilgotnosc') | float(0) / 5) | round(0) * 5 | int }}"
-  temp_bed: "{{ states('sensor.sypialnia_temperatura') | float(0) | round(1) }}"
+  temp_in:  "{{ states('sensor.living_room_temperature') | float(0) | round(1) }}"
+  hum_in:   "{{ (states('sensor.living_room_humidity') | float(0) / 5) | round(0) * 5 | int }}"
+  temp_bed: "{{ states('sensor.bedroom_temperature') | float(0) | round(1) }}"
 
-  # Ile okien otwartych – lista nazw jako JSON
   windows_open: >-
     {{ states.binary_sensor
        | selectattr('attributes.device_class', 'defined')
@@ -38,18 +29,16 @@ data:
        | selectattr('state', 'eq', 'on')
        | map(attribute='name') | list | tojson }}
 
-  door_locked: "{{ is_state('lock.drzwi_wejsciowe', 'locked') }}"
+  door_locked: "{{ is_state('lock.front_door', 'locked') }}"
 
-  # Moc zaokrąglona do 0,5 kW, żeby nie przerysowywać przy każdym wahnięciu
-  power_kw: "{{ ((states('sensor.moc_dom') | float(0) / 1000) * 2) | round(0) / 2 }}"
-  energy_today: "{{ states('sensor.energia_dzis') | float(0) | round(0) | int }}"
+  power_kw: "{{ ((states('sensor.house_power') | float(0) / 1000) * 2) | round(0) / 2 }}"
+  energy_today: "{{ states('sensor.energy_today') | float(0) | round(0) | int }}"
 
-  # Najbliższe wydarzenie z kalendarza (atrybuty encji calendar.*)
   events: >-
-    {% set e = 'calendar.rodzina' %}
+    {% set e = 'calendar.family' %}
     {% if state_attr(e, 'message') %}
-      {{ [{'time': as_timestamp(state_attr(e, 'start_time')) | timestamp_custom('%d.%m %H:%M'),
+      {{ [{'time': as_timestamp(state_attr(e, 'start_time')) | timestamp_custom('%b %d %H:%M'),
            'text': state_attr(e, 'message')}] | tojson }}
     {% else %}[]{% endif %}
 
-  bins: "{{ states('sensor.wywoz_smieci') }}"
+  bins: "{{ states('sensor.waste_collection') }}"
